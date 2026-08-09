@@ -1,0 +1,77 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: mad_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-mad_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mad_password}
+      POSTGRES_DB: ${POSTGRES_DB:-mad_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mad_user} -d ${POSTGRES_DB:-mad_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mad_net
+
+  redis:
+    image: redis:7-alpine
+    container_name: mad_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mad_net
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: mad_backend
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-mad_user}:${POSTGRES_PASSWORD:-mad_password}@postgres:5432/${POSTGRES_DB:-mad_db}
+      SYNC_DATABASE_URL: postgresql://${POSTGRES_USER:-mad_user}:${POSTGRES_PASSWORD:-mad_password}@postgres:5432/${POSTGRES_DB:-mad_db}
+      REDIS_URL: redis://redis:6379/0
+      JWT_SECRET: ${JWT_SECRET:-super_secret_mad_key_change_in_production_12345}
+      JWT_ALGORITHM: HS256
+      JWT_EXPIRY_HOURS: 24
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - mad_net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: mad_frontend
+    restart: always
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - mad_net
+
+networks:
+  mad_net:
+    driver: bridge
+
+volumes:
+  postgres_data:
