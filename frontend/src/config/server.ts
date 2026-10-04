@@ -13,12 +13,14 @@ import { isNative } from '../lib/platform';
 export const SERVER_CHANGED_EVENT = 'rm:server-changed';
 export const DEFAULT_BACKEND_PORT = 8000;
 
+export const DEFAULT_CLOUD_API_URL = 'https://reboot-mind-api.onrender.com';
+
 export function getServerUrl(): string | null {
   const saved = storage.get(StorageKeys.serverUrl);
   if (saved) return saved;
   const env = import.meta.env.VITE_API_URL;
   if (env) return normalizeServerUrl(env);
-  return isNative() ? null : '';
+  return isNative() ? DEFAULT_CLOUD_API_URL : '';
 }
 
 export function isServerConfigured(): boolean {
@@ -79,7 +81,7 @@ export interface ServerCheckResult {
 }
 
 /** Pings GET /api/health on the given server. */
-export async function testServer(rawUrl: string, timeoutMs = 5000): Promise<ServerCheckResult> {
+export async function testServer(rawUrl: string, timeoutMs = 15000): Promise<ServerCheckResult> {
   const base = normalizeServerUrl(rawUrl);
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);

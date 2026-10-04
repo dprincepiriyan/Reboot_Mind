@@ -5,9 +5,9 @@ const config: CapacitorConfig = {
   appName: 'RebootMind',
   webDir: 'dist',
   server: {
-    androidScheme: 'http',
+    androidScheme: 'https',
     cleartext: true,
-    allowNavigation: ['*'],
+    allowNavigation: ['reboot-mind-api.onrender.com', '*.onrender.com', '*'],
   },
   android: {
     allowMixedContent: true,

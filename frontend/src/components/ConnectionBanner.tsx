@@ -60,7 +60,7 @@ export const ConnectionBanner: React.FC = () => {
         ) : (
           <>
             <AlertCircle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-            <span>Host PC server unreachable. Is PC on this Wi-Fi?</span>
+            <span>Connecting to server... (If waking from sleep, please wait 30s)</span>
           </>
         )}
       </div>

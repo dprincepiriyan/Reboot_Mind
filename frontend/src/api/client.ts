@@ -1,7 +1,7 @@
 import { getApiBase, getServerUrl } from '../config/server';
 import { authStorage } from '../lib/authStorage';
 
-const REQUEST_TIMEOUT_MS = 10000;
+const REQUEST_TIMEOUT_MS = 45000;
 
 export async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const token = authStorage.getToken();
@@ -26,9 +26,9 @@ export async function apiFetch<T>(endpoint: string, options: RequestInit = {}): 
       signal: options.signal ?? controller.signal,
     });
   } catch {
-    // Network failure / timeout: the server is unreachable on the LAN.
+    // Network failure / timeout
     const where = getServerUrl() || 'the server';
-    throw new Error(`Can't reach ${where}. Check your Wi-Fi and server address.`);
+    throw new Error(`Can't reach ${where}. If the server is starting up, please wait a moment and retry.`);
   } finally {
     clearTimeout(timer);
   }
