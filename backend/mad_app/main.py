@@ -34,6 +34,17 @@ async def lifespan(app: FastAPI):
     log_startup_lan_banner()
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+    try:
+        from mad_app.db.models import DailyTask
+        from mad_app.db.session import AsyncSessionLocal
+        async with AsyncSessionLocal() as session:
+            t_res = await session.execute(select(DailyTask).limit(1))
+            if not t_res.scalars().first():
+                logger.info("Fresh database detected. Auto-seeding initial recovery tasks and peer circles...")
+                from seed import seed_data
+                await seed_data()
+    except Exception as e:
+        logger.error(f"Auto-seed check error: {e}")
     start_scheduler(sio=sio)
     yield
     logger.info("Shutting down RebootMind backend application...")
@@ -92,6 +103,16 @@ async def connect_info():
         "primary_url": f"http://{ips[0]}:{port}" if ips else f"http://localhost:{port}",
         "lan_urls": [f"http://{ip}:{port}" for ip in ips],
     }
+
+@app.api_route("/api/seed", methods=["GET", "POST"])
+async def trigger_seed():
+    try:
+        from seed import seed_data
+        await seed_data()
+        return {"status": "ok", "message": "Database successfully populated with demo circles and tasks"}
+    except Exception as e:
+        logger.error(f"Manual seed error: {e}", exc_info=True)
+        return {"status": "error", "detail": str(e)}
 
 # 4. Wrap with Socket.IO ASGI App
 socket_app = socketio.ASGIApp(sio, app)

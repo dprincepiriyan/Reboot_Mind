@@ -66,10 +66,9 @@ async def run_matching_batch(db: AsyncSession, sio=None):
 
     for addiction_type, group in by_addiction.items():
         if len(group) < 2:
-            # Check timeout for single waiting users (fallback to general room after 60s)
+            # Immediately assign single waiting users to general room for their addiction type
             for resp in group:
-                if _is_timed_out(resp.created_at, timeout_seconds=60):
-                    await assign_to_general_room(db, resp, sio)
+                await assign_to_general_room(db, resp, sio)
             continue
 
         # Build feature matrix
@@ -168,6 +167,7 @@ async def assign_to_general_room(db: AsyncSession, response: QuestionnaireRespon
         db.add(member)
 
     response.matched = True
+    await db.commit()
 
     if sio:
         try:

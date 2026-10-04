@@ -19,16 +19,26 @@ export const ChatroomList: React.FC = () => {
   });
 
   useEffect(() => {
-    Promise.all([chatroomsApi.getUserChatrooms(), authApi.getMe()])
-      .then(([rooms, user]) => {
-        setChatrooms(rooms);
-        setProfile(user);
-      })
-      .catch((err) => {
-        console.error(err);
-        setError('Failed to load chatrooms. Please try again.');
-      })
-      .finally(() => setIsLoading(false));
+    let interval: ReturnType<typeof setInterval>;
+    const load = () => {
+      Promise.all([chatroomsApi.getUserChatrooms(), authApi.getMe()])
+        .then(([rooms, user]) => {
+          setChatrooms(rooms);
+          setProfile(user);
+          if (rooms.length > 0) {
+            clearInterval(interval);
+          }
+        })
+        .catch((err) => {
+          console.error(err);
+          setError('Failed to load chatrooms. Please try again.');
+        })
+        .finally(() => setIsLoading(false));
+    };
+
+    load();
+    interval = setInterval(load, 3000);
+    return () => clearInterval(interval);
   }, []);
 
   if (isLoading) {
@@ -72,9 +82,21 @@ export const ChatroomList: React.FC = () => {
             <div>
               <h3 className="text-sm font-bold text-white">Connecting With Your Circle...</h3>
               <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto leading-relaxed">
-                Matching you anonymously with peers on a similar timeline. This typically takes just a few moments.
+                Matching you anonymously with peers on a similar recovery stage.
               </p>
             </div>
+            <button
+              onClick={() => {
+                setIsLoading(true);
+                chatroomsApi.getUserChatrooms().then((rooms) => {
+                  setChatrooms(rooms);
+                  if (rooms.length > 0) navigate(`/chatroom/${rooms[0].id}`);
+                }).finally(() => setIsLoading(false));
+              }}
+              className="w-full py-2.5 rounded-xl bg-gradient-to-r from-brand-600 to-teal-500 hover:from-brand-500 hover:to-teal-400 text-white font-bold text-xs shadow-md shadow-brand-950/30 transition-all active:scale-98"
+            >
+              Enter Peer Circle Now
+            </button>
           </div>
         ) : (
           <div className="glass-card rounded-3xl p-8 text-center space-y-4 border border-white/[0.05]">

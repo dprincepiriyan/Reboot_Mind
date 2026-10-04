@@ -27,7 +27,20 @@ async def get_user_chatrooms(
         .where(ChatroomMember.profile_id == profile.id)
     )
     memberships = mem_res.scalars().all()
-    room_ids = [m.chatroom_id for m in memberships]
+    if not room_ids:
+        # If user has completed questionnaire, automatically assign them to general circle for their addiction type
+        from mad_app.db.models import QuestionnaireResponse
+        from mad_app.services.matching import assign_to_general_room
+        q_res = await db.execute(select(QuestionnaireResponse).where(QuestionnaireResponse.user_id == user_id))
+        q = q_res.scalar_one_or_none()
+        if q:
+            await assign_to_general_room(db, q)
+            mem_res = await db.execute(
+                select(ChatroomMember)
+                .where(ChatroomMember.profile_id == profile.id)
+            )
+            memberships = mem_res.scalars().all()
+            room_ids = [m.chatroom_id for m in memberships]
 
     if not room_ids:
         return []
