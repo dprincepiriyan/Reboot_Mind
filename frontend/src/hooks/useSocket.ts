@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useSocketContext } from '../contexts/SocketContext';
 import { Message, chatroomsApi } from '../api/chatrooms';
+import { haptics } from '../lib/haptics';
+import { notifications } from '../lib/notifications';
 
 interface UseSocketOptions {
   activeChatroomId?: string;
@@ -42,10 +44,6 @@ export function useSocket(options?: UseSocketOptions) {
   useEffect(() => {
     if (!socket) return;
 
-    if (isConnected && activeChatroomId) {
-      socket.emit('join_room', { chatroom_id: activeChatroomId });
-    }
-
     const onMatched = (data: { chatroom_id: string }) => {
       if (onMatchedRef.current) {
         onMatchedRef.current(data.chatroom_id);
@@ -73,6 +71,8 @@ export function useSocket(options?: UseSocketOptions) {
 
     const onSosAlert = (data: { display_name: string; level: string }) => {
       setSosAlert(data);
+      haptics.heavy();
+      notifications.showSosAlert(data.display_name, data.level);
       if (sosTimeoutRef.current) clearTimeout(sosTimeoutRef.current);
       sosTimeoutRef.current = setTimeout(() => setSosAlert(null), 10000);
     };
@@ -89,6 +89,7 @@ export function useSocket(options?: UseSocketOptions) {
       }
     };
 
+    // Register ALL listeners BEFORE emitting join_room
     socket.on('matched', onMatched);
     socket.on('room_history', onRoomHistory);
     socket.on('receive_message', onReceiveMessage);
@@ -96,6 +97,11 @@ export function useSocket(options?: UseSocketOptions) {
     socket.on('sos_alert', onSosAlert);
     socket.on('graduation_offer', onGraduationOffer);
     socket.on('room_merged', onRoomMerged);
+
+    // Now emit join_room — listeners are ready to receive room_history
+    if (isConnected && activeChatroomId) {
+      socket.emit('join_room', { chatroom_id: activeChatroomId });
+    }
 
     return () => {
       socket.off('matched', onMatched);
@@ -130,6 +136,7 @@ export function useSocket(options?: UseSocketOptions) {
 
   const triggerSOSAlert = useCallback((chatroomId: string, level: string) => {
     if (socket) {
+      haptics.heavy();
       socket.emit('trigger_sos', { chatroom_id: chatroomId, level });
     }
   }, [socket]);

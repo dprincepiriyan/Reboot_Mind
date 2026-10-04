@@ -28,7 +28,9 @@ def start_scheduler(sio=None):
         seconds=15,
         args=[sio],
         id='matching_batch_job',
-        replace_existing=True
+        replace_existing=True,
+        max_instances=1,
+        coalesce=True
     )
     scheduler.add_job(
         scheduled_graduation_job,
@@ -36,10 +38,12 @@ def start_scheduler(sio=None):
         seconds=15,
         args=[sio],
         id='graduation_job',
-        replace_existing=True
+        replace_existing=True,
+        max_instances=1,
+        coalesce=True
     )
     scheduler.start()
-    logger.info("APScheduler started: running matching batch and graduation jobs every 15s")
+    logger.info("APScheduler started: running matching batch and graduation jobs every 15s (coalesced, max 1 instance)")
 
 def stop_scheduler():
     if scheduler.running:

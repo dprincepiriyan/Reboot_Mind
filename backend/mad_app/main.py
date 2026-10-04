@@ -5,9 +5,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from mad_app.config import settings
-from mad_app.routers import auth, questionnaire, chatrooms, sobriety, sos, tasks
+from mad_app.routers import auth, questionnaire, chatrooms, sobriety, sos, tasks, journal, reports, ifthen
 from mad_app.sockets.chat_namespace import ChatNamespace
 from mad_app.services.scheduler import start_scheduler, stop_scheduler
+from mad_app.db.session import engine
+from mad_app.db.models import Base
+from mad_app.services.network import log_startup_lan_banner, get_lan_ip_addresses
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("main")
@@ -27,25 +30,37 @@ sio.register_namespace(chat_ns)
 # 2. FastAPI Lifespan
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Starting up MAD backend application...")
+    logger.info("Starting up RebootMind backend application...")
+    log_startup_lan_banner()
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
     start_scheduler(sio=sio)
     yield
-    logger.info("Shutting down MAD backend application...")
+    logger.info("Shutting down RebootMind backend application...")
     stop_scheduler()
 
 # 3. Create FastAPI app
 app = FastAPI(
     title=settings.PROJECT_NAME,
-    description="MAD — Anonymous Addiction Support Application API",
-    version="1.0.0",
+    description="RebootMind - Anonymous Addiction Support Application API",
+    version=settings.VERSION,
     lifespan=lifespan
 )
 app.state.sio = sio
 
-# CORS
+# CORS - Allow local web dev, mobile webviews (Capacitor/Ionic), and LAN clients
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "capacitor://localhost",
+        "ionic://localhost",
+    ],
+    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+|169\.254\.\d+\.\d+)(:\d+)?$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -58,10 +73,26 @@ app.include_router(chatrooms.router)
 app.include_router(sobriety.router)
 app.include_router(sos.router)
 app.include_router(tasks.router)
+app.include_router(journal.router)
+app.include_router(reports.router)
+app.include_router(ifthen.router)
 
 @app.get("/api/health")
 async def health_check():
-    return {"status": "ok", "app": settings.PROJECT_NAME}
+    return {"status": "ok", "app": settings.PROJECT_NAME, "version": settings.VERSION}
+
+@app.get("/api/connect-info")
+async def connect_info():
+    ips = get_lan_ip_addresses()
+    port = settings.BACKEND_PORT
+    return {
+        "status": "ok",
+        "app": settings.PROJECT_NAME,
+        "version": settings.VERSION,
+        "primary_url": f"http://{ips[0]}:{port}" if ips else f"http://localhost:{port}",
+        "lan_urls": [f"http://{ip}:{port}" for ip in ips],
+    }
 
 # 4. Wrap with Socket.IO ASGI App
 socket_app = socketio.ASGIApp(sio, app)
+

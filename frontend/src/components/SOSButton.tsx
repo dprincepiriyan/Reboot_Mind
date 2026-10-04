@@ -11,9 +11,11 @@ export const SOSButton: React.FC<SOSButtonProps> = ({ chatroomId, onSOSTriggered
   const [isOpen, setIsOpen] = useState(false);
   const [resources, setResources] = useState<CrisisResource[] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleTrigger = async (level: 'struggling' | 'urgent') => {
     setIsLoading(true);
+    setError(null);
     try {
       const res = await sosApi.trigger(chatroomId, level);
       if (onSOSTriggered) {
@@ -26,6 +28,9 @@ export const SOSButton: React.FC<SOSButtonProps> = ({ chatroomId, onSOSTriggered
       }
     } catch (err) {
       console.error('Failed to trigger SOS:', err);
+      setError(
+        'Unable to alert your group right now. If you need immediate help, please call the SAMHSA Helpline: 1-800-662-4357 (24/7, free & confidential).'
+      );
     } finally {
       setIsLoading(false);
     }
@@ -35,7 +40,7 @@ export const SOSButton: React.FC<SOSButtonProps> = ({ chatroomId, onSOSTriggered
     <>
       {/* Pulse red SOS button */}
       <button
-        onClick={() => setIsOpen(true)}
+        onClick={() => { setIsOpen(true); setError(null); }}
         className="relative group flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-bold text-xs shadow-lg shadow-red-900/40 transition-all transform hover:scale-105 active:scale-95"
       >
         <span className="relative flex h-2 w-2">
@@ -51,11 +56,30 @@ export const SOSButton: React.FC<SOSButtonProps> = ({ chatroomId, onSOSTriggered
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in">
           <div className="glass-card max-w-md w-full rounded-2xl p-6 border border-red-500/30 shadow-2xl relative">
             <button
-              onClick={() => { setIsOpen(false); setResources(null); }}
+              onClick={() => { setIsOpen(false); setResources(null); setError(null); }}
               className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
+
+            {/* Error Fallback — always visible when error occurs */}
+            {error && (
+              <div className="mb-4 p-3 rounded-xl bg-red-500/15 border border-red-500/30 text-xs text-red-200 leading-relaxed">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                  <div>
+                    <p>{error}</p>
+                    <a
+                      href="tel:18006624357"
+                      className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-600 text-white font-bold text-[11px] hover:bg-red-500 transition-colors"
+                    >
+                      <PhoneCall className="w-3.5 h-3.5" />
+                      Call Now: 1-800-662-4357
+                    </a>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {!resources ? (
               <div className="text-center space-y-5">
@@ -109,7 +133,7 @@ export const SOSButton: React.FC<SOSButtonProps> = ({ chatroomId, onSOSTriggered
 
                 <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
                   {resources.map((res, i) => (
-                    <div key={i} className="p-3 rounded-xl bg-dark-800 border border-slate-700/60 space-y-1">
+                    <div key={res.name || i} className="p-3 rounded-xl bg-dark-800 border border-slate-700/60 space-y-1">
                       <div className="font-semibold text-sm text-emerald-400">{res.name}</div>
                       <div className="text-xs font-mono font-bold text-white bg-slate-800 px-2 py-1 rounded inline-block">
                         {res.contact}
@@ -120,7 +144,7 @@ export const SOSButton: React.FC<SOSButtonProps> = ({ chatroomId, onSOSTriggered
                 </div>
 
                 <button
-                  onClick={() => { setIsOpen(false); setResources(null); }}
+                  onClick={() => { setIsOpen(false); setResources(null); setError(null); }}
                   className="w-full py-2.5 rounded-xl bg-dark-700 hover:bg-dark-600 text-slate-200 font-medium text-xs transition-colors"
                 >
                   Return to Chat

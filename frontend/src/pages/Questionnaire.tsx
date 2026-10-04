@@ -13,6 +13,7 @@ export const Questionnaire: React.FC = () => {
   const [knowsSimilar, setKnowsSimilar] = useState(false);
   const [onsetDescription, setOnsetDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
   const [isWaitingForMatch, setIsWaitingForMatch] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,6 +24,7 @@ export const Questionnaire: React.FC = () => {
   });
 
   const handleSubmit = async () => {
+    if (isSubmitting || hasSubmitted) return;
     setIsSubmitting(true);
     try {
       const res = await questionnaireApi.submit({
@@ -33,6 +35,7 @@ export const Questionnaire: React.FC = () => {
         onset_description: onsetDescription,
       });
 
+      setHasSubmitted(true);
       if (res.matched && res.chatroom_id) {
         navigate(`/chatroom/${res.chatroom_id}`);
       } else {
@@ -238,9 +241,9 @@ export const Questionnaire: React.FC = () => {
                 Back
               </button>
               <button
-                disabled={isSubmitting}
+                disabled={isSubmitting || hasSubmitted}
                 onClick={handleSubmit}
-                className="w-2/3 py-3 rounded-xl bg-gradient-to-r from-brand-600 to-teal-500 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/40"
+                className="w-2/3 py-3 rounded-xl bg-gradient-to-r from-brand-600 to-teal-500 disabled:opacity-50 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/40"
               >
                 {isSubmitting ? (
                   <>

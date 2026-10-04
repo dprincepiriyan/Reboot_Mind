@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: reboot-mind-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: reboot-mind-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: JWT_EXPIRY_HOURS
+        value: "168"
+
+databases:
+  - name: reboot-mind-db
+    plan: free
+    databaseName: reboot_mind
+    user: reboot_mind

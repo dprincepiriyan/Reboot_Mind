@@ -9,34 +9,52 @@ interface TaskCardProps {
 
 export const TaskCard: React.FC<TaskCardProps> = ({ task, onComplete }) => {
   return (
-    <div className={`flex items-start gap-3.5 p-4 rounded-2xl transition-all ${
+    <div className={`flex items-start gap-3.5 p-3.5 rounded-2xl transition-all duration-200 ${
       task.completed 
-        ? 'bg-emerald-950/20 border border-emerald-500/30' 
-        : 'glass-card glass-card-hover'
+        ? 'bg-dark-900/40 border border-brand-500/20 opacity-80' 
+        : 'glass-card border border-white/[0.05] hover:border-brand-500/30 shadow-surface-sm'
     }`}>
       <button
         disabled={task.completed}
         onClick={() => onComplete(task.id)}
         className={`mt-0.5 shrink-0 transition-transform active:scale-90 ${
-          task.completed ? 'text-emerald-400' : 'text-slate-400 hover:text-emerald-400'
+          task.completed ? 'text-brand-400 cursor-default' : 'text-slate-500 hover:text-brand-400'
         }`}
+        aria-label={task.completed ? "Task completed" : "Complete task"}
       >
         {task.completed ? (
-          <CheckCircle2 className="w-6 h-6 fill-emerald-500/20 text-emerald-400" />
+          <CheckCircle2 className="w-5 h-5 fill-brand-500/15 text-brand-400" />
         ) : (
-          <Circle className="w-6 h-6" />
+          <Circle className="w-5 h-5 stroke-[1.75]" />
         )}
       </button>
 
-      <div className="flex-1">
-        <p className={`text-sm leading-relaxed ${task.completed ? 'line-through text-slate-400 font-normal' : 'text-slate-100 font-medium'}`}>
+      <div className="flex-1 min-w-0">
+        <p className={`text-xs leading-relaxed transition-all ${
+          task.completed 
+            ? 'line-through text-slate-500 font-normal' 
+            : 'text-slate-200 font-medium'
+        }`}>
           {task.task_text}
         </p>
-        {task.addiction_type && (
-          <span className="inline-block text-[10px] uppercase font-bold text-teal-400 bg-teal-500/10 border border-teal-500/20 px-2 py-0.5 rounded-full mt-2">
-            {task.addiction_type}
-          </span>
-        )}
+        <div className="flex flex-wrap items-center gap-1.5 mt-2">
+          {task.difficulty_tier && (
+            <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border ${
+              task.difficulty_tier === 'mastery'
+                ? 'bg-purple-500/10 border-purple-500/20 text-purple-300'
+                : task.difficulty_tier === 'growth'
+                ? 'bg-teal-500/10 border-teal-500/20 text-teal-300'
+                : 'bg-brand-500/10 border-brand-500/20 text-brand-300'
+            }`}>
+              {task.difficulty_tier === 'mastery' ? '🌳 Mastery' : task.difficulty_tier === 'growth' ? '🌿 Growth' : '🌱 Foundational'}
+            </span>
+          )}
+          {task.addiction_type && (
+            <span className="inline-block text-[9px] uppercase font-semibold text-slate-400 bg-dark-900 border border-white/[0.04] px-2 py-0.5 rounded-md">
+              {task.addiction_type}
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );

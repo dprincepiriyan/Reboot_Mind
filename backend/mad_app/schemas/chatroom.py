@@ -6,6 +6,8 @@ class MemberOut(BaseModel):
     profile_id: str
     display_name: str
     avatar_seed: str
+    equipped_aura: str = "default"
+    equipped_title: str = "The Seeker"
 
 class MessageOut(BaseModel):
     id: str
@@ -15,6 +17,8 @@ class MessageOut(BaseModel):
     avatar_seed: str
     content: str
     sent_at: datetime
+    equipped_aura: str = "default"
+    equipped_title: str = "The Seeker"
 
     class Config:
         from_attributes = True

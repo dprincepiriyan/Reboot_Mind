@@ -40,7 +40,7 @@ export const Chatroom: React.FC = () => {
     },
     onRoomMerged: (data) => {
       if (data.old_room_id === chatroomId) {
-        navigate(`/chatrooms/${data.new_room_id}`);
+        navigate(`/chatroom/${data.new_room_id}`);
       }
     }
   });
@@ -112,7 +112,7 @@ export const Chatroom: React.FC = () => {
     setIsOfferLoading(true);
     try {
       const res = await chatroomsApi.acceptGraduationOffer(chatroomId);
-      navigate(`/chatrooms/${res.new_chatroom_id}`);
+      navigate(`/chatroom/${res.new_chatroom_id}`);
     } catch (err) {
       console.error("Failed to accept offer:", err);
       setError("Failed to accept graduation offer. Please try again.");
@@ -138,23 +138,23 @@ export const Chatroom: React.FC = () => {
   if (!chatroomId) return null;
 
   return (
-    <div className="flex flex-col h-[calc(100vh-60px)] max-w-md mx-auto bg-dark-900 border-x border-slate-800/50">
+    <div className="flex flex-col h-[calc(100vh-60px)] max-w-md mx-auto bg-dark-950 border-x border-white/[0.05] font-sans">
       {/* Room Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-dark-800/90 border-b border-slate-800 shrink-0">
+      <div className="flex items-center justify-between px-4 py-3 bg-dark-900/90 backdrop-blur-md border-b border-white/[0.06] shrink-0">
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate('/chatrooms')}
-            className="p-1.5 text-slate-400 hover:text-white rounded-lg transition-colors"
+            className="p-1.5 text-slate-400 hover:text-white rounded-xl hover:bg-dark-800 transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h3 className="font-bold text-sm text-white capitalize">
-              {chatroomInfo ? `${chatroomInfo.addiction_type} Support Circle` : 'Support Chatroom'}
+            <h3 className="font-bold text-xs text-white capitalize">
+              {chatroomInfo ? `${chatroomInfo.addiction_type} Circle` : 'Support Room'}
             </h3>
-            <div className="text-[10px] text-emerald-400 flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span>Encrypted Anonymous Room</span>
+            <div className="text-[10px] text-brand-400 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-brand-400 animate-pulse"></span>
+              <span>Anonymous Peer Support</span>
             </div>
           </div>
         </div>
@@ -167,7 +167,7 @@ export const Chatroom: React.FC = () => {
 
           <button
             onClick={() => setShowMembers(!showMembers)}
-            className="p-2 text-slate-400 hover:text-white rounded-xl bg-dark-700/60 hover:bg-dark-700 transition-colors"
+            className="p-2 text-slate-400 hover:text-white rounded-xl bg-dark-850 hover:bg-dark-800 border border-white/[0.05] transition-colors shadow-surface-sm"
             title="Members"
           >
             <Users className="w-4 h-4" />
@@ -176,22 +176,22 @@ export const Chatroom: React.FC = () => {
       </div>
 
       {error && (
-        <div className="bg-red-500/10 border-b border-red-500/20 p-2.5 text-xs text-red-400 text-center shrink-0">
+        <div className="bg-rose-500/10 border-b border-rose-500/20 p-2.5 text-xs text-rose-300 text-center shrink-0">
           {error}
         </div>
       )}
 
       {/* Graduation Offer Banner */}
       {graduationOffer && (
-        <div className="bg-gradient-to-r from-emerald-900/95 to-teal-950/95 border-b border-emerald-500/40 p-4 text-xs text-white flex flex-col gap-2.5 shrink-0 shadow-lg relative overflow-hidden">
-          <div className="absolute -right-4 -top-4 w-20 h-20 bg-emerald-500/10 rounded-full blur-xl"></div>
+        <div className="bg-dark-850 border-b border-brand-500/30 p-4 text-xs text-white flex flex-col gap-2.5 shrink-0 shadow-surface-md relative overflow-hidden">
+          <div className="absolute -right-4 -top-4 w-20 h-20 bg-brand-500/10 rounded-full blur-xl pointer-events-none"></div>
           <div className="flex items-start gap-2.5 relative">
-            <Award className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5 animate-bounce" />
+            <Award className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
             <div className="space-y-1">
-              <h4 className="font-extrabold text-emerald-300">Milestone Reached! 🎉</h4>
-              <p className="text-[11px] text-slate-200 leading-relaxed">
-                Every member in this circle has crossed a <strong>{graduationOffer.milestone_tier === '30_day' ? '30 Days' : graduationOffer.milestone_tier === '90_day' ? '90 Days' : '1 Year'}</strong> sobriety streak! 
-                Would you like to merge into a graduated support circle with other groups at the same milestone?
+              <h4 className="font-bold text-brand-300">Milestone Reached! 🎉</h4>
+              <p className="text-[11px] text-slate-300 leading-relaxed">
+                Every member in this circle has crossed a <strong className="text-white">{graduationOffer.milestone_tier === '30_day' ? '30 Days' : graduationOffer.milestone_tier === '90_day' ? '90 Days' : '1 Year'}</strong> sobriety streak! 
+                Would you like to merge into a graduated circle with other groups at the same milestone?
               </p>
             </div>
           </div>
@@ -199,14 +199,14 @@ export const Chatroom: React.FC = () => {
             <button
               disabled={isOfferLoading}
               onClick={handleAcceptOffer}
-              className="px-3.5 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-dark-950 font-extrabold text-[10px] transition-all"
+              className="px-3.5 py-1.5 rounded-xl bg-brand-500 hover:bg-brand-400 disabled:opacity-50 text-dark-950 font-bold text-[10px] transition-all active:scale-95 shadow-surface-sm"
             >
               Accept & Join
             </button>
             <button
               disabled={isOfferLoading}
               onClick={handleDeclineOffer}
-              className="px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-300 font-bold text-[10px] transition-all"
+              className="px-3.5 py-1.5 rounded-xl bg-dark-800 hover:bg-dark-750 disabled:opacity-50 text-slate-300 font-semibold text-[10px] transition-all"
             >
               Not Now
             </button>
@@ -216,12 +216,12 @@ export const Chatroom: React.FC = () => {
 
       {/* SOS Alert Banner */}
       {sosAlert && (
-        <div className="bg-gradient-to-r from-red-900/90 to-rose-900/90 border-b border-red-500/40 p-3 text-xs text-white flex items-center justify-between animate-bounce">
+        <div className="bg-rose-500/15 border-b border-rose-500/30 p-3 text-xs text-rose-200 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
-            <ShieldAlert className="w-5 h-5 text-red-300 shrink-0" />
+            <ShieldAlert className="w-5 h-5 text-rose-400 shrink-0" />
             <div>
-              <strong className="text-red-200">{sosAlert.display_name}</strong> triggered an SOS alert ({sosAlert.level}).
-              <div className="text-[10px] text-red-200/80">Offer kind words and supportive check-in below.</div>
+              <strong className="text-white font-bold">{sosAlert.display_name}</strong> triggered an SOS ({sosAlert.level}).
+              <div className="text-[10px] text-rose-300/80">Send kind words and supportive check-in below.</div>
             </div>
           </div>
         </div>
@@ -229,21 +229,24 @@ export const Chatroom: React.FC = () => {
 
       {/* Members Modal */}
       {showMembers && chatroomInfo && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="glass-card max-w-xs w-full rounded-2xl p-5 border border-slate-700 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-700 pb-3">
-              <h4 className="font-bold text-sm text-white flex items-center gap-2">
-                <Users className="w-4 h-4 text-emerald-400" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="bg-dark-900 border border-white/[0.08] max-w-xs w-full rounded-3xl p-5 space-y-4 shadow-surface-lg">
+            <div className="flex items-center justify-between border-b border-white/[0.06] pb-3">
+              <h4 className="font-bold text-xs uppercase tracking-wider text-white flex items-center gap-2">
+                <Users className="w-4 h-4 text-brand-400" />
                 <span>Circle Members ({chatroomInfo.members.length})</span>
               </h4>
-              <button onClick={() => setShowMembers(false)} className="text-slate-400 hover:text-white">
+              <button 
+                onClick={() => setShowMembers(false)} 
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-dark-800 transition-colors"
+              >
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <div className="space-y-2.5 max-h-60 overflow-y-auto">
+            <div className="space-y-2 max-h-60 overflow-y-auto">
               {chatroomInfo.members.map((m) => (
-                <div key={m.profile_id} className="flex items-center gap-3 p-2 rounded-xl bg-dark-800/60">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center text-xs font-bold text-white">
+                <div key={m.profile_id} className="flex items-center gap-2.5 p-2 rounded-xl bg-dark-850 border border-white/[0.04]">
+                  <div className="w-7 h-7 rounded-lg bg-dark-800 border border-white/[0.06] flex items-center justify-center text-[10px] font-bold text-brand-300">
                     {m.display_name.substring(0, 2).toUpperCase()}
                   </div>
                   <span className="text-xs font-medium text-slate-200">{m.display_name}</span>
@@ -257,10 +260,10 @@ export const Chatroom: React.FC = () => {
       {/* Messages List */}
       <div className="flex-1 overflow-y-auto p-4 space-y-1">
         {messages.length === 0 ? (
-          <div className="text-center py-12 text-slate-500 space-y-2">
+          <div className="text-center py-16 text-slate-500 space-y-2.5">
             <HeartHandshake className="w-10 h-10 mx-auto text-slate-600" />
-            <p className="text-xs">This is the start of your anonymous support room.</p>
-            <p className="text-[11px]">Say hello or share how you're feeling today!</p>
+            <p className="text-xs font-medium text-slate-400">This is the beginning of your peer support circle.</p>
+            <p className="text-[11px] text-slate-500">Say hello or share how your recovery is feeling today.</p>
           </div>
         ) : (
           messages.map((msg) => (
@@ -273,7 +276,7 @@ export const Chatroom: React.FC = () => {
         )}
 
         {typingUser && (
-          <div className="text-[11px] text-slate-400 italic px-2 py-1 animate-pulse">
+          <div className="text-[10px] text-slate-400 italic px-2 py-1 animate-pulse">
             {typingUser} is typing...
           </div>
         )}
@@ -282,18 +285,18 @@ export const Chatroom: React.FC = () => {
       </div>
 
       {/* Message Input */}
-      <form onSubmit={handleSend} className="p-3 bg-dark-800/90 border-t border-slate-800 flex items-center gap-2 shrink-0">
+      <form onSubmit={handleSend} className="p-3 bg-dark-900/90 backdrop-blur-md border-t border-white/[0.06] flex items-center gap-2 shrink-0">
         <input
           type="text"
           value={inputContent}
           onChange={handleInputChange}
           placeholder="Share encouragement or check in..."
-          className="flex-1 bg-dark-900 border border-slate-700/80 rounded-xl px-4 py-2.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-brand-500"
+          className="flex-1 bg-dark-850 border border-slate-700/70 rounded-xl px-4 py-2.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-brand-500/80 transition-colors"
         />
         <button
           type="submit"
           disabled={!inputContent.trim()}
-          className="p-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 disabled:opacity-40 text-white shadow-md transition-all active:scale-95"
+          className="p-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 disabled:opacity-40 text-white shadow-md shadow-brand-950/30 transition-all active:scale-95 shrink-0"
         >
           <Send className="w-4 h-4" />
         </button>

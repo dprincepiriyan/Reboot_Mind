@@ -5,6 +5,9 @@ export interface DailyTask {
   task_text: string;
   addiction_type?: string;
   completed: boolean;
+  difficulty_tier?: 'foundational' | 'growth' | 'mastery';
+  min_streak_days?: number;
+  streak_stage?: string;
 }
 
 export const tasksApi = {

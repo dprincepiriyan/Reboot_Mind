@@ -7,7 +7,7 @@ from sqlalchemy.orm import selectinload
 
 from mad_app.config import settings
 from mad_app.db.session import AsyncSessionLocal
-from mad_app.db.models import User, Profile, ChatroomMember, Message, Chatroom
+from mad_app.db.models import User, Profile, ChatroomMember, Message, Chatroom, SOSEvent
 
 logger = logging.getLogger("chat_namespace")
 
@@ -50,7 +50,9 @@ class ChatNamespace(socketio.AsyncNamespace):
                     "user_id": user_id,
                     "profile_id": profile.id,
                     "display_name": profile.display_name,
-                    "avatar_seed": profile.avatar_seed
+                    "avatar_seed": profile.avatar_seed,
+                    "equipped_aura": getattr(profile, "equipped_aura", "default") or "default",
+                    "equipped_title": getattr(profile, "equipped_title", "The Seeker") or "The Seeker"
                 }
 
                 # Join user's personal room for direct notifications (e.g. matching alert)
@@ -106,6 +108,8 @@ class ChatNamespace(socketio.AsyncNamespace):
                     "profile_id": m.profile_id,
                     "display_name": m.profile.display_name if m.profile else "Anon",
                     "avatar_seed": m.profile.avatar_seed if m.profile else "default",
+                    "equipped_aura": getattr(m.profile, "equipped_aura", "default") if m.profile else "default",
+                    "equipped_title": getattr(m.profile, "equipped_title", "The Seeker") if m.profile else "The Seeker",
                     "content": m.content,
                     "sent_at": m.sent_at.isoformat() if hasattr(m.sent_at, "isoformat") else str(m.sent_at)
                 }
@@ -152,6 +156,8 @@ class ChatNamespace(socketio.AsyncNamespace):
                 "profile_id": user_info["profile_id"],
                 "display_name": user_info["display_name"],
                 "avatar_seed": user_info["avatar_seed"],
+                "equipped_aura": user_info.get("equipped_aura", "default"),
+                "equipped_title": user_info.get("equipped_title", "The Seeker"),
                 "content": content,
                 "sent_at": sent_at_str
             }
@@ -180,10 +186,38 @@ class ChatNamespace(socketio.AsyncNamespace):
         chatroom_id = data.get("chatroom_id")
         level = data.get("level", "struggling")
 
-        if chatroom_id:
-            socket_room = f"room_{chatroom_id}"
-            await self.emit("sos_alert", {
-                "chatroom_id": chatroom_id,
-                "display_name": user_info["display_name"],
-                "level": level
-            }, room=socket_room)
+        if not chatroom_id:
+            return
+
+        # Verify the user is actually a member of this chatroom (C-3 IDOR fix)
+        async with AsyncSessionLocal() as db:
+            mem_res = await db.execute(
+                select(ChatroomMember)
+                .where(
+                    ChatroomMember.chatroom_id == chatroom_id,
+                    ChatroomMember.profile_id == user_info["profile_id"]
+                )
+            )
+            if not mem_res.scalar_one_or_none():
+                await self.emit("error", {"message": "Not a member of this chatroom"}, room=sid)
+                return
+
+            # Persist SOSEvent to DB (H-4 dual-pathway unification)
+            try:
+                sos_entry = SOSEvent(
+                    user_id=user_info["user_id"],
+                    chatroom_id=chatroom_id,
+                    level=level,
+                    resolved=False
+                )
+                db.add(sos_entry)
+                await db.commit()
+            except Exception as e:
+                logger.error(f"Failed to persist socket SOSEvent: {e}")
+
+        socket_room = f"room_{chatroom_id}"
+        await self.emit("sos_alert", {
+            "chatroom_id": chatroom_id,
+            "display_name": user_info["display_name"],
+            "level": level
+        }, room=socket_room)

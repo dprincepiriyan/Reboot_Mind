@@ -7,6 +7,9 @@ class DailyTaskOut(BaseModel):
     task_text: str
     addiction_type: Optional[str] = None
     completed: bool = False
+    difficulty_tier: str = "foundational"  # foundational, growth, mastery
+    min_streak_days: int = 0
+    streak_stage: Optional[str] = None
 
     class Config:
         from_attributes = True

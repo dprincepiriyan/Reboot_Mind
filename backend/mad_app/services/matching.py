@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import numpy as np
 from sklearn.preprocessing import normalize
 from sklearn.cluster import KMeans
@@ -10,6 +10,16 @@ from sqlalchemy.orm import selectinload
 from mad_app.db.models import QuestionnaireResponse, Profile, Chatroom, ChatroomMember
 
 logger = logging.getLogger("matching_service")
+
+def _is_timed_out(created_at: datetime, timeout_seconds: int = 60) -> bool:
+    if not created_at:
+        return False
+    now = datetime.now(timezone.utc)
+    if created_at.tzinfo is None:
+        created_at_utc = created_at.replace(tzinfo=timezone.utc)
+    else:
+        created_at_utc = created_at.astimezone(timezone.utc)
+    return (now - created_at_utc) > timedelta(seconds=timeout_seconds)
 
 ADDICTION_TYPES = ["alcohol", "smoking", "gaming"]
 FREQ_MAP = {"daily": 1.0, "weekly": 0.7, "monthly": 0.4, "rarely": 0.1}
@@ -26,7 +36,7 @@ def compute_feature_vector(
     disclosed_val = 1.0 if disclosed_to_others else 0.0
     knows_val = 1.0 if knows_similar_others else 0.0
 
-    raw_vector = at_vec + [freq_val, freq_val, disclosed_val, knows_val]
+    raw_vector = at_vec + [freq_val, disclosed_val, knows_val]
     return {
         "vector": raw_vector,
         "addiction_type": addiction_type,
@@ -56,16 +66,9 @@ async def run_matching_batch(db: AsyncSession, sio=None):
 
     for addiction_type, group in by_addiction.items():
         if len(group) < 2:
-            # Check timeout for single waiting users (fallback to general room after 2 mins)
+            # Check timeout for single waiting users (fallback to general room after 60s)
             for resp in group:
-                created_at = resp.created_at
-                # Handle naive datetime
-                if created_at.tzinfo is not None:
-                    now = datetime.now(created_at.tzinfo)
-                else:
-                    now = datetime.utcnow()
-                    
-                if (now - created_at) > timedelta(seconds=5):
+                if _is_timed_out(resp.created_at, timeout_seconds=60):
                     await assign_to_general_room(db, resp, sio)
             continue
 
@@ -103,9 +106,7 @@ async def run_matching_batch(db: AsyncSession, sio=None):
             if len(cluster) == 1:
                 # If leftover single user, check fallback or skip for next run
                 r = cluster[0]
-                created_at = r.created_at
-                now = datetime.now(created_at.tzinfo) if created_at.tzinfo else datetime.utcnow()
-                if (now - created_at) > timedelta(seconds=5):
+                if _is_timed_out(r.created_at, timeout_seconds=60):
                     await assign_to_general_room(db, r, sio)
                 continue
 

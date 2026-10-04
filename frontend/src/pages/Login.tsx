@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Lock, Mail, ArrowRight, Shield } from 'lucide-react';
+import { Lock, Mail, ArrowRight, Shield, Server } from 'lucide-react';
 import { authApi } from '../api/auth';
+import { authStorage } from '../lib/authStorage';
+import { useServerUrl } from '../hooks/useServerUrl';
 
 interface LoginProps {
   onLoginSuccess: () => void;
@@ -13,6 +15,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const serverUrl = useServerUrl();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,7 +24,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
     try {
       const res = await authApi.login(email, password);
-      localStorage.setItem('mad_token', res.access_token);
+      authStorage.setToken(res.access_token);
       onLoginSuccess();
       navigate('/chatrooms');
     } catch (err: unknown) {
@@ -36,51 +39,51 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div className="min-h-[85vh] flex items-center justify-center p-4">
-      <div className="glass-card max-w-md w-full rounded-3xl p-8 border border-slate-700/60 shadow-2xl space-y-6">
-        <div className="text-center space-y-2">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-brand-600 to-teal-400 flex items-center justify-center text-white text-2xl font-black mx-auto shadow-lg shadow-emerald-950/40">
-            M
+    <div className="min-h-[85vh] flex items-center justify-center p-4 font-sans animate-fade-in">
+      <div className="glass-card max-w-sm w-full rounded-3xl p-7 border border-white/[0.06] shadow-surface-lg space-y-5">
+        <div className="text-center space-y-1.5">
+          <div className="w-12 h-12 rounded-2xl bg-brand-500/15 border border-brand-500/25 flex items-center justify-center text-brand-400 text-xl font-black mx-auto shadow-surface-sm">
+            R
           </div>
-          <h2 className="text-2xl font-extrabold text-white tracking-tight">Welcome Back</h2>
+          <h2 className="text-xl font-bold text-white tracking-tight">Welcome to RebootMind</h2>
           <p className="text-xs text-slate-400">
-            Your identity is 100% encrypted & isolated from chat groups.
+            RebootMind · Encrypted Peer Recovery
           </p>
         </div>
 
         {error && (
-          <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-medium text-center">
+          <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs font-medium text-center">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-300">Email Address</label>
+        <form onSubmit={handleSubmit} className="space-y-3.5">
+          <div className="space-y-1">
+            <label className="text-[10px] uppercase font-bold tracking-wider text-slate-400">Email Address</label>
             <div className="relative">
-              <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+              <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="user@example.com"
-                className="w-full bg-dark-900/80 border border-slate-700 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-brand-500 transition-colors"
+                placeholder="you@domain.com"
+                className="w-full bg-dark-900 border border-slate-700/70 rounded-xl py-2.5 pl-10 pr-4 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-brand-500/80 transition-colors"
               />
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-300">Password</label>
+          <div className="space-y-1">
+            <label className="text-[10px] uppercase font-bold tracking-wider text-slate-400">Password</label>
             <div className="relative">
-              <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+              <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
               <input
                 type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full bg-dark-900/80 border border-slate-700 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-brand-500 transition-colors"
+                className="w-full bg-dark-900 border border-slate-700/70 rounded-xl py-2.5 pl-10 pr-4 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-brand-500/80 transition-colors"
               />
             </div>
           </div>
@@ -88,24 +91,33 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-3 rounded-xl bg-gradient-to-r from-brand-600 to-teal-500 hover:from-brand-500 hover:to-teal-400 text-white font-bold text-sm shadow-lg shadow-emerald-950/40 flex items-center justify-center gap-2 transition-all transform active:scale-98"
+            className="w-full py-2.5 rounded-xl bg-gradient-to-r from-brand-600 to-teal-500 hover:from-brand-500 hover:to-teal-400 text-white font-bold text-xs shadow-md shadow-brand-950/30 flex items-center justify-center gap-2 transition-all active:scale-98 disabled:opacity-50"
           >
-            <span>{isLoading ? 'Signing In...' : 'Sign In'}</span>
-            <ArrowRight className="w-4 h-4" />
+            <span>{isLoading ? 'Authenticating...' : 'Sign In'}</span>
+            <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </form>
 
-        <div className="pt-2 text-center text-xs text-slate-400 border-t border-slate-800">
+        <div className="pt-2 text-center text-xs text-slate-400 border-t border-white/[0.05]">
           Need an account?{' '}
-          <Link to="/signup" className="text-emerald-400 font-semibold hover:underline">
-            Create an Anonymous Account
+          <Link to="/signup" className="text-brand-400 font-semibold hover:underline">
+            Create Anonymous Account
           </Link>
         </div>
 
-        <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-500 pt-1">
-          <Shield className="w-3.5 h-3.5 text-emerald-500" />
-          <span>Zero logs of real names in chat databases</span>
+        <div className="flex items-center justify-center gap-1.5 text-[10px] text-slate-500 pt-0.5">
+          <Shield className="w-3.5 h-3.5 text-brand-400" />
+          <span>No real names stored or revealed to peers</span>
         </div>
+
+        <Link
+          id="login-server-settings"
+          to="/connect"
+          className="flex items-center justify-center gap-1.5 text-[10px] text-slate-500 hover:text-brand-400 transition-colors"
+        >
+          <Server className="w-3 h-3" />
+          <span>Server: {serverUrl || 'this site'} · Change</span>
+        </Link>
       </div>
     </div>
   );

@@ -45,9 +45,11 @@ services:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-mad_user}:${POSTGRES_PASSWORD:-mad_password}@postgres:5432/${POSTGRES_DB:-mad_db}
       SYNC_DATABASE_URL: postgresql://${POSTGRES_USER:-mad_user}:${POSTGRES_PASSWORD:-mad_password}@postgres:5432/${POSTGRES_DB:-mad_db}
       REDIS_URL: redis://redis:6379/0
+      WAIT_FOR_DB_HOST: postgres
       JWT_SECRET: ${JWT_SECRET:-super_secret_mad_key_change_in_production_12345}
       JWT_ALGORITHM: HS256
       JWT_EXPIRY_HOURS: 24
+      HOST_LAN_IP: ${HOST_LAN_IP:-}
     depends_on:
       postgres:
         condition: service_healthy

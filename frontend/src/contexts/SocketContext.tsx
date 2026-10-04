@@ -1,5 +1,7 @@
-import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
+import { getSocketUrl } from '../config/server';
+import { useServerUrl } from '../hooks/useServerUrl';
 
 interface SocketContextType {
   socket: Socket | null;
@@ -16,24 +18,23 @@ export const useSocketContext = () => useContext(SocketContext);
 export const SocketProvider: React.FC<{ token: string | null; children: React.ReactNode }> = ({ token, children }) => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const serverUrl = useServerUrl();
 
   useEffect(() => {
-    if (!token) {
+    if (!token || serverUrl === null) {
       setSocket(null);
       setIsConnected(false);
       return;
     }
 
-    const socketUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-      ? `${window.location.protocol}//${window.location.hostname}:8000`
-      : undefined;
-
-    const newSocket = io(socketUrl, {
+    const newSocket = io(getSocketUrl(), {
       auth: { token },
       transports: ['websocket', 'polling'],
       reconnection: true,
-      reconnectionAttempts: 10,
+      reconnectionAttempts: Infinity,
       reconnectionDelay: 1000,
+      reconnectionDelayMax: 10000,
+      timeout: 8000,
     });
 
     setSocket(newSocket);
@@ -51,7 +52,7 @@ export const SocketProvider: React.FC<{ token: string | null; children: React.Re
       setSocket(null);
       setIsConnected(false);
     };
-  }, [token]);
+  }, [token, serverUrl]);
 
   return (
     <SocketContext.Provider value={{ socket, isConnected }}>

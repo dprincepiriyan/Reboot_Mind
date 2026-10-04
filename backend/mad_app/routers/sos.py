@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -39,6 +39,7 @@ CRISIS_RESOURCES = [
 @router.post("", response_model=SOSResponse)
 async def trigger_sos(
     req: SOSTriggerRequest,
+    request: Request,
     user_id: str = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db)
 ):
@@ -65,7 +66,18 @@ async def trigger_sos(
     await db.commit()
     await db.refresh(sos_entry)
 
-    # Note: Socket event emission is handled via socket namespace or main app
+    # Emit real-time alert to chatroom members via Socket.IO
+    sio = getattr(request.app.state, "sio", None)
+    if sio:
+        try:
+            await sio.emit("sos_alert", {
+                "chatroom_id": req.chatroom_id,
+                "display_name": profile.display_name,
+                "level": req.level
+            }, room=f"room_{req.chatroom_id}")
+        except Exception as e:
+            print(f"Error emitting sos_alert from REST API: {e}")
+
     # If level == 'urgent', include resources
     resources = CRISIS_RESOURCES if req.level == "urgent" else None
 

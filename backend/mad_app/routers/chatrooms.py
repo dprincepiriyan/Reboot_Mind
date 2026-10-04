@@ -182,13 +182,19 @@ async def accept_graduation_offer(
     if not mem_res.scalar_one_or_none():
         raise HTTPException(status_code=403, detail="Not a member of this chatroom")
 
+    # Atomically lock the offer row to prevent double-accept race condition (C-1, C-2)
     offer_res = await db.execute(
         select(GraduationOffer)
         .where(GraduationOffer.chatroom_id == chatroom_id, GraduationOffer.status == "pending")
+        .with_for_update()
     )
     offer = offer_res.scalar_one_or_none()
     if not offer:
-        raise HTTPException(status_code=404, detail="No pending graduation offer found")
+        raise HTTPException(status_code=409, detail="Graduation offer already processed or not found")
+
+    # Immediately mark as accepted to block concurrent requests
+    offer.status = "accepted"
+    await db.flush()
 
     room_res = await db.execute(select(Chatroom).where(Chatroom.id == chatroom_id))
     old_room = room_res.scalar_one_or_none()
@@ -225,7 +231,6 @@ async def accept_graduation_offer(
         await db.delete(m)
 
     old_room.active = False
-    offer.status = "accepted"
     await db.commit()
 
     sio = request.app.state.sio

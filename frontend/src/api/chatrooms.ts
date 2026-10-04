@@ -4,6 +4,8 @@ export interface ChatroomMember {
   profile_id: string;
   display_name: string;
   avatar_seed: string;
+  equipped_aura?: string;
+  equipped_title?: string;
 }
 
 export interface Message {
@@ -14,6 +16,8 @@ export interface Message {
   avatar_seed: string;
   content: string;
   sent_at: string;
+  equipped_aura?: string;
+  equipped_title?: string;
 }
 
 export interface ChatroomInfo {
